@@ -1,9 +1,8 @@
+/* =========================================
+   Olist E-Commerce Dataset – Database Schema
+   ========================================= */
 
-
--- =====================
--- Customers
--- CSV: olist_customers_dataset.csv
--- =====================
+-- Customers: basic customer info + location
 CREATE TABLE customers (
     customer_id                VARCHAR PRIMARY KEY,
     customer_unique_id         VARCHAR,
@@ -12,13 +11,10 @@ CREATE TABLE customers (
     customer_state             VARCHAR(2)
 );
 
--- =====================
--- Orders
--- CSV: olist_orders_dataset.csv
--- =====================
+-- Orders: one row per order 
 CREATE TABLE orders (
     order_id                       VARCHAR PRIMARY KEY,
-    customer_id                    VARCHAR REFERENCES customers(customer_id),
+    customer_id                    VARCHAR NOT NULL REFERENCES customers(customer_id),
     order_status                   VARCHAR,
     order_purchase_timestamp       TIMESTAMP,
     order_approved_at              TIMESTAMP,
@@ -27,11 +23,7 @@ CREATE TABLE orders (
     order_estimated_delivery_date  TIMESTAMP
 );
 
--- =====================
--- Products
--- CSV: olist_products_dataset.csv
--- (typo 'lenght' matches the real CSV)
--- =====================
+-- Products: product details and dimensions
 CREATE TABLE products (
     product_id                    VARCHAR PRIMARY KEY,
     product_category_name         VARCHAR,
@@ -44,10 +36,7 @@ CREATE TABLE products (
     product_width_cm              NUMERIC
 );
 
--- =====================
--- Sellers
--- CSV: olist_sellers_dataset.csv
--- =====================
+-- Sellers: seller information and location
 CREATE TABLE sellers (
     seller_id               VARCHAR PRIMARY KEY,
     seller_zip_code_prefix  INTEGER,
@@ -55,65 +44,50 @@ CREATE TABLE sellers (
     seller_state            VARCHAR(2)
 );
 
--- =====================
--- Order items
--- CSV: olist_order_items_dataset.csv
--- =====================
+-- Order items: products within each order
 CREATE TABLE order_items (
-    order_id             VARCHAR REFERENCES orders(order_id),
-    order_item_id        INTEGER,
-    product_id           VARCHAR REFERENCES products(product_id),
-    seller_id            VARCHAR REFERENCES sellers(seller_id),
+    order_id             VARCHAR NOT NULL REFERENCES orders(order_id),
+    order_item_id        INTEGER NOT NULL,
+    product_id           VARCHAR NOT NULL REFERENCES products(product_id),
+    seller_id            VARCHAR NOT NULL REFERENCES sellers(seller_id),
     shipping_limit_date  TIMESTAMP,
-    price                NUMERIC,
-    freight_value        NUMERIC,
+    price                NUMERIC(10,2),
+    freight_value        NUMERIC(10,2),
     PRIMARY KEY (order_id, order_item_id)
 );
 
--- =====================
--- Order payments
--- CSV: olist_order_payments_dataset.csv
--- =====================
+-- Payments: payment details per order
 CREATE TABLE order_payments (
-    order_id             VARCHAR REFERENCES orders(order_id),
-    payment_sequential   INTEGER,
+    order_id             VARCHAR NOT NULL REFERENCES orders(order_id),
+    payment_sequential   INTEGER NOT NULL,
     payment_type         VARCHAR,
     payment_installments INTEGER,
-    payment_value        NUMERIC
+    payment_value        NUMERIC(10,2),
+    PRIMARY KEY (order_id, payment_sequential)
 );
 
--- =====================
--- Order reviews
--- CSV: olist_order_reviews_dataset.csv
--- (no PK so duplicate review_id values from the CSV won't break import)
--- =====================
+-- Reviews: customer reviews and scores (1–5)
 CREATE TABLE order_reviews (
     review_id               VARCHAR,
-    order_id                VARCHAR REFERENCES orders(order_id),
-    review_score            INTEGER,
+    order_id                VARCHAR NOT NULL REFERENCES orders(order_id),
+    review_score            INTEGER CHECK (review_score BETWEEN 1 AND 5),
     review_comment_title    VARCHAR,
     review_comment_message  TEXT,
     review_creation_date    TIMESTAMP,
     review_answer_timestamp TIMESTAMP
 );
 
--- =====================
--- Geolocation
--- CSV: olist_geolocation_dataset.csv
--- =====================
+-- Geolocation: zip prefix to latitude/longitude
 CREATE TABLE geolocation (
     geolocation_zip_code_prefix INTEGER,
-    geolocation_lat             NUMERIC,
-    geolocation_lng             NUMERIC,
+    geolocation_lat             NUMERIC(9,6),
+    geolocation_lng             NUMERIC(9,6),
     geolocation_city            VARCHAR,
     geolocation_state           VARCHAR(2)
 );
 
--- =====================
--- Product category translation
--- CSV: product_category_name_translation.csv
--- =====================
+-- Category translation: Portuguese → English
 CREATE TABLE product_category_name_translation (
-    product_category_name         VARCHAR,
+    product_category_name         VARCHAR PRIMARY KEY,
     product_category_name_english VARCHAR
 );
