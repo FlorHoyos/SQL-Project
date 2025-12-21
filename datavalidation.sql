@@ -2,7 +2,7 @@
    Data Validation Checks
    =========================== */
 
--- 1) Row counts (sanity check)
+-- 1) Row counts 
 SELECT 'customers'  AS table_name, COUNT(*) AS row_count FROM customers
 UNION ALL
 SELECT 'orders',     COUNT(*) FROM orders
