@@ -2,7 +2,7 @@
    Data Validation Checks
    =========================== */
 
--- 1) Row counts 
+-- 1) Row counts
 SELECT 'customers'  AS table_name, COUNT(*) AS row_count FROM customers
 UNION ALL
 SELECT 'orders',     COUNT(*) FROM orders
@@ -58,29 +58,39 @@ WHERE order_id IS NULL;
 
 -- 3) Orphan checks (broken relationships, should be 0)
 SELECT 'orders without customers' AS check_name, COUNT(*) AS issue_count
-FROM orders o
-LEFT JOIN customers c ON o.customer_id = c.customer_id
-WHERE c.customer_id IS NULL
+FROM orders AS ord
+LEFT JOIN customers AS cust
+  ON ord.customer_id = cust.customer_id
+WHERE ord.customer_id IS NOT NULL
+  AND cust.customer_id IS NULL
 UNION ALL
 SELECT 'order_items without orders', COUNT(*)
-FROM order_items oi
-LEFT JOIN orders o ON oi.order_id = o.order_id
-WHERE o.order_id IS NULL
+FROM order_items AS items
+LEFT JOIN orders AS ord
+  ON items.order_id = ord.order_id
+WHERE items.order_id IS NOT NULL
+  AND ord.order_id IS NULL
 UNION ALL
 SELECT 'order_items without products', COUNT(*)
-FROM order_items oi
-LEFT JOIN products p ON oi.product_id = p.product_id
-WHERE p.product_id IS NULL
+FROM order_items AS items
+LEFT JOIN products AS prod
+  ON items.product_id = prod.product_id
+WHERE items.product_id IS NOT NULL
+  AND prod.product_id IS NULL
 UNION ALL
 SELECT 'order_items without sellers', COUNT(*)
-FROM order_items oi
-LEFT JOIN sellers s ON oi.seller_id = s.seller_id
-WHERE s.seller_id IS NULL
+FROM order_items AS items
+LEFT JOIN sellers AS sell
+  ON items.seller_id = sell.seller_id
+WHERE items.seller_id IS NOT NULL
+  AND sell.seller_id IS NULL
 UNION ALL
 SELECT 'reviews without orders', COUNT(*)
-FROM order_reviews r
-LEFT JOIN orders o ON r.order_id = o.order_id
-WHERE o.order_id IS NULL;
+FROM order_reviews AS rev
+LEFT JOIN orders AS ord
+  ON rev.order_id = ord.order_id
+WHERE rev.order_id IS NOT NULL
+  AND ord.order_id IS NULL;
 
 
 -- 4) Duplicate checks (should be 0 for PK tables)
@@ -90,7 +100,7 @@ FROM (
   FROM customers
   GROUP BY customer_id
   HAVING COUNT(*) > 1
-) d
+) AS dup
 UNION ALL
 SELECT 'duplicate orders.order_id', COUNT(*)
 FROM (
@@ -98,7 +108,7 @@ FROM (
   FROM orders
   GROUP BY order_id
   HAVING COUNT(*) > 1
-) d
+) AS dup
 UNION ALL
 SELECT 'duplicate products.product_id', COUNT(*)
 FROM (
@@ -106,7 +116,7 @@ FROM (
   FROM products
   GROUP BY product_id
   HAVING COUNT(*) > 1
-) d
+) AS dup
 UNION ALL
 SELECT 'duplicate sellers.seller_id', COUNT(*)
 FROM (
@@ -114,21 +124,21 @@ FROM (
   FROM sellers
   GROUP BY seller_id
   HAVING COUNT(*) > 1
-) d;
+) AS dup;
 
 
 -- 5) Value checks (should be 0)
 SELECT 'negative item price/freight' AS check_name, COUNT(*) AS issue_count
-FROM order_items
-WHERE price < 0 OR freight_value < 0
+FROM order_items AS items
+WHERE items.price < 0 OR items.freight_value < 0
 UNION ALL
 SELECT 'negative payment_value', COUNT(*)
-FROM order_payments
-WHERE payment_value < 0
+FROM order_payments AS pay
+WHERE pay.payment_value < 0
 UNION ALL
 SELECT 'review_score outside 1-5', COUNT(*)
-FROM order_reviews
-WHERE review_score < 1 OR review_score > 5;
+FROM order_reviews AS rev
+WHERE rev.review_score < 1 OR rev.review_score > 5;
 
 
 -- 6) Quick samples (optional)
